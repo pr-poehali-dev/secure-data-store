@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    font-family: 'Roboto', sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'Roboto Mono', monospace;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
