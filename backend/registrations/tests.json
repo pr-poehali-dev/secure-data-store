@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "Создать заявку",
+      "method": "POST",
+      "path": "/",
+      "body": {"name": "Тест Тестов", "phone": "+79001234567", "service": "Гончарное дело", "email": "", "message": ""},
+      "expectedStatus": 201
+    },
+    {
+      "name": "Получить заявки без токена",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 403
+    }
+  ]
+}

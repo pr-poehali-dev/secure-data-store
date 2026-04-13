@@ -2,7 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Icon from "@/components/ui/icon";
+
+const API_URL = "https://functions.poehali.dev/b85f57b2-94b5-4d7c-8f7a-63aa2102f955";
 
 const NAV_ITEMS = [
   { id: "home", label: "Главная" },
@@ -140,11 +145,48 @@ const statusColorMap: Record<string, string> = {
 
 export default function Index() {
   const [activeSection, setActiveSection] = useState("home");
+  const [formOpen, setFormOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: "", phone: "", email: "", service: "", message: "" });
+  const [formLoading, setFormLoading] = useState(false);
+  const [formSuccess, setFormSuccess] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const scrollTo = (id: string) => {
     setActiveSection(id);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const openForm = (service = "") => {
+    setFormData({ name: "", phone: "", email: "", service, message: "" });
+    setFormSuccess(false);
+    setFormError("");
+    setFormOpen(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.phone || !formData.service) {
+      setFormError("Пожалуйста, заполните имя, телефон и выберите мастер-класс");
+      return;
+    }
+    setFormLoading(true);
+    setFormError("");
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (res.status === 201) {
+        setFormSuccess(true);
+      } else {
+        setFormError("Произошла ошибка. Попробуйте ещё раз.");
+      }
+    } catch {
+      setFormError("Ошибка сети. Проверьте подключение.");
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   return (
@@ -177,7 +219,7 @@ export default function Index() {
                 </button>
               ))}
             </div>
-            <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-400 font-medium">
+            <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-400 font-medium" onClick={() => openForm()}>
               Записаться
             </Button>
           </div>
@@ -365,6 +407,7 @@ export default function Index() {
                     variant="ghost"
                     size="sm"
                     className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 p-0 h-auto text-sm"
+                    onClick={() => openForm(s.title)}
                   >
                     Записаться <Icon name="ArrowRight" className="ml-1 w-3 h-3" />
                   </Button>
@@ -441,6 +484,88 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      {/* Registration Dialog */}
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg">Запись на мастер-класс</DialogTitle>
+          </DialogHeader>
+          {formSuccess ? (
+            <div className="text-center py-6">
+              <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon name="CheckCircle" className="w-8 h-8 text-green-400" />
+              </div>
+              <p className="text-white font-semibold mb-2">Заявка отправлена!</p>
+              <p className="text-gray-400 text-sm mb-4">Мы свяжемся с вами в ближайшее время.</p>
+              <Button className="bg-amber-500 hover:bg-amber-400 text-white" onClick={() => setFormOpen(false)}>
+                Закрыть
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Имя *</label>
+                <Input
+                  placeholder="Ваше имя"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Телефон *</label>
+                <Input
+                  placeholder="+7 (900) 000-00-00"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Email</label>
+                <Input
+                  placeholder="email@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Мастер-класс *</label>
+                <select
+                  value={formData.service}
+                  onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+                  className="w-full rounded-md bg-gray-800 border border-gray-700 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  <option value="">Выберите направление...</option>
+                  {SERVICES.map((s) => (
+                    <option key={s.title} value={s.title}>{s.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 mb-1 block">Комментарий</label>
+                <Textarea
+                  placeholder="Опыт, пожелания, вопросы..."
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 resize-none"
+                  rows={3}
+                />
+              </div>
+              {formError && <p className="text-red-400 text-sm">{formError}</p>}
+              <Button
+                className="bg-amber-500 hover:bg-amber-400 text-white font-medium"
+                onClick={handleSubmit}
+                disabled={formLoading}
+              >
+                {formLoading ? "Отправляем..." : "Записаться"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Footer */}
       <footer className="border-t border-gray-800 bg-gray-950 py-10">
